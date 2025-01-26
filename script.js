@@ -8,6 +8,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        window.focus
+// @license      MIT
 // ==/UserScript==
 
 (function () {
