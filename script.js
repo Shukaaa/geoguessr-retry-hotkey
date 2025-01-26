@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoGuessr Retry Hotkey
 // @namespace    https://www.geoguessr.com/
-// @version      1.1
+// @version      1.2
 // @description  Quickly resets the game by navigating to the last visited map and starting a new game.
 // @author       Shukaaa (mr aduchi)
 // @match        https://www.geoguessr.com/*
@@ -94,11 +94,31 @@
         }
     };
 
+    // Check for URL Changes
+    const observeUrlChanges = () => {
+        let lastUrl = window.location.href;
+
+        const observer = new MutationObserver(() => {
+            const currentUrl = window.location.href;
+
+            if (currentUrl !== lastUrl) {
+                log(`URL changed: ${currentUrl}`);
+                lastUrl = currentUrl;
+
+                // Save the map URL if it's a map page
+                saveCurrentMap();
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    };
+
     // Initialize script
     const initialize = () => {
         document.addEventListener("keydown", handleKeyDown); // Add keydown listener
         attemptPlay(); // Check if play needs to be triggered
         saveCurrentMap(); // Save the map URL if relevant
+        observeUrlChanges(); // Start observing URL changes
     };
 
     // Run the script
