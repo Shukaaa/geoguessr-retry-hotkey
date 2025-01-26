@@ -3,6 +3,9 @@
 ## Description
 The **GeoGuessr Retry Hotkey** Tampermonkey script enhances your GeoGuessr experience by allowing you to reset the game quickly with a single key press. It navigates to the last visited map and starts a new game automatically.
 
+## Browser Support
+The script has been tested in the following browsers: `Chrome`, `Opera GX`, and `Firefox`.
+
 ## Installation
 1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser.
 2. Install the script via [GreasyFork](https://greasyfork.org/de/scripts/524965-geoguessr-retry-hotkey)
