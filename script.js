@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoGuessr Retry Hotkey
 // @namespace    https://www.geoguessr.com/
-// @version      1.0
+// @version      1.1
 // @description  Quickly resets the game by navigating to the last visited map and starting a new game.
 // @author       Shukaaa (mr aduchi)
 // @match        https://www.geoguessr.com/*
@@ -9,6 +9,8 @@
 // @grant        GM_getValue
 // @grant        window.focus
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/524965/GeoGuessr%20Retry%20Hotkey.user.js
+// @updateURL https://update.greasyfork.org/scripts/524965/GeoGuessr%20Retry%20Hotkey.meta.js
 // ==/UserScript==
 
 (function () {
@@ -70,7 +72,10 @@
                 const playButton = playButtonContainer.querySelector("button");
                 if (playButton) {
                     saveToStorage(PLAY_TRIGGERED_KEY, false);
-                    playButton.click(); // Click the button
+                    playButton.focus();
+                    setTimeout(() => {
+                        playButton.click();
+                    }, 50);
                 } else {
                     log("'Play' button not found inside container.", "warn");
                 }
