@@ -3,7 +3,7 @@
 // @namespace    https://www.geoguessr.com/
 // @version      1.4
 // @description  Quickly resets the game by navigating to the last visited map and starting a new game.
-// @author       Shukaaa (mr aduchi)
+// @author       Shukaaa (aduchi nom)
 // @match        https://www.geoguessr.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
