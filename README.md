@@ -15,8 +15,14 @@ The script has been tested in the following browsers: `Chrome`, `Opera GX`, and 
 2. **Redirect to Map:** The script redirects you to the last visited map.
 3. **Start New Game:** On the map page, the script clicks the "Play" button automatically to begin a new game.
 
-## Configuration
-- **Reset Key:** The reset key is set to `P` by default. You can always press `CTRL`+`ALT`+`CURRENT_RESET_KEY` to open a dialog for changing the hotkey to a new one.
+## Settings
+To open the settings you need to open the in-game settings menu when you're inside a game.
+
+![Settings](https://github.com/Shukaaa/geoguessr-retry-hotkey/blob/main/img/settings.png?raw=true)
+
+There are two settings:
+- **Retry Hotkey:** The key that triggers the retry. Default is `P`.
+- **Delay:** The delay in milliseconds before the "Play" button is clicked. Default is `50`.
 
 ## Script Logic
 ### Key Components:
