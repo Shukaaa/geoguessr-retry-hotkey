@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoGuessr Retry Hotkey
 // @namespace    https://www.geoguessr.com/
-// @version      1.3
+// @version      1.4
 // @description  Quickly resets the game by navigating to the last visited map and starting a new game.
 // @author       Shukaaa (mr aduchi)
 // @match        https://www.geoguessr.com/*
@@ -21,9 +21,11 @@
     const LAST_VISITED_MAP_KEY = "lastVisitedMap";
     const PLAY_TRIGGERED_KEY = "playTriggered";
     const RESET_KEY_STORAGE = "resetKey";
+    const DELAY_STORAGE = "rh-delay";
 
     // Retry Hotkey
     let RESET_KEY = localStorage.getItem(RESET_KEY_STORAGE) || "p";
+    let DELAY = localStorage.getItem(DELAY_STORAGE) || 50;
 
     // Helper: Logging function for consistent console outputs
     const log = (message, level = "log") => {
@@ -45,12 +47,6 @@
     const handleKeyDown = (event) => {
         const currentURL = window.location.href;
 
-        // Open Change Key Dialog when CTRL + ALT + KEY is pressed
-        if (event.ctrlKey && event.altKey && event.key === RESET_KEY) {
-            openChangeKeyDialog();
-            return;
-        }
-
         // Trigger reset
         if (currentURL.includes("/game/") && event.key === RESET_KEY) {
             const lastVisitedMap = loadFromStorage(LAST_VISITED_MAP_KEY);
@@ -67,44 +63,6 @@
         if (!currentURL.includes("/game/")) {
             log("Reset aborted: Not on a game page.", "warn");
         }
-    };
-
-    // Open dialog to change hotkey
-    const openChangeKeyDialog = () => {
-        const dialog = document.createElement("div");
-        dialog.style.position = "fixed";
-        dialog.style.top = "50%";
-        dialog.style.left = "50%";
-        dialog.style.transform = "translate(-50%, -50%)";
-        dialog.style.padding = "20px";
-        dialog.style.boxShadow = "inset 0 0.0625rem 0 hsla(0,0%,100%,.15),inset 0 -0.0625rem 0 rgba(0,0,0,.25)";
-        dialog.style.background = "linear-gradient(180deg,rgba(161,155,217,.6) 0%,rgba(161,155,217,0) 50%,rgba(161,155,217,0) 50%),var(--ds-color-purple-80)";
-        dialog.style.color = "var(--ds-color-white)";
-        dialog.style.fontSize = "var(--font-size-18)";
-        dialog.style.fontWeight = "700";
-        dialog.style.fontStyle = "italic";
-        dialog.style.zIndex = "10000";
-        dialog.style.borderRadius = "0.1875rem";
-        dialog.innerHTML = `
-            <p>Press a new key to set as the hotkey... (Press DEL to abort)</p>
-        `;
-
-        document.body.appendChild(dialog);
-
-        // Handle key press
-        const handleNewKey = (event) => {
-            if (event.key !== "Delete") {
-                RESET_KEY = event.key;
-                localStorage.setItem(RESET_KEY_STORAGE, RESET_KEY);
-                log(`New hotkey set: ${RESET_KEY}`);
-                alert(`New hotkey set to: ${RESET_KEY.toUpperCase()}`);
-            }
-
-            document.body.removeChild(dialog);
-            document.removeEventListener("keydown", handleNewKey);
-        };
-
-        document.addEventListener("keydown", handleNewKey);
     };
 
     // Automatically click the play button on the map page
@@ -124,7 +82,7 @@
                     playButton.focus();
                     setTimeout(() => {
                         playButton.click();
-                    }, 50);
+                    }, DELAY);
                 } else {
                     log("'Play' button not found inside container.", "warn");
                 }
@@ -162,12 +120,132 @@
         observer.observe(document.body, { childList: true, subtree: true });
     };
 
+    const addConfigurationsToMenuOverlay = () => {
+        const SETTINGS_INITIALIZED_ATTR = "data-retry-hotkey-settings-initialized";
+
+        // Utility functions for creating reusable components made by geoguessr
+        const cloneComponent = (selector, modifier = (clone) => clone) => {
+            const component = document.querySelector(selector);
+            if (!component) return null;
+            const clone = component.cloneNode(true);
+            return modifier(clone);
+        };
+
+        const createTitle = (title) =>
+        cloneComponent("div[class*='game-menu_headerContainer']", (clone) => {
+            clone.childNodes[0].innerHTML = title;
+            return clone;
+        });
+
+        const createDivider = () => cloneComponent("div[class*='game-menu_divider']");
+
+        const createOptionContainer = (optionName) =>
+        cloneComponent("div[class*='game-menu_volumeContainer']", (clone) => {
+            clone.removeChild(clone.lastChild);
+            clone.childNodes[0].innerHTML = optionName;
+            return clone;
+        });
+
+        const createButton = (text, onClick) => {
+            const button = document.createElement("button");
+            button.style.cursor = "pointer";
+            button.style.color = "#fff";
+            button.style.border = ".0625rem solid var(--ds-color-white-80)";
+            button.style.padding = "0.75rem 1.5rem";
+            button.style.borderRadius = "3.75rem";
+            button.style.marginTop = "1em";
+            button.innerHTML = text;
+            if (onClick) button.onclick = onClick;
+            return button;
+        };
+
+        const createBlockquote = (text) => {
+            const blockquote = document.createElement("blockquote");
+            blockquote.style.borderLeft = ".333rem solid #ccc";
+            blockquote.style.color = "#ccc";
+            blockquote.style.marginLeft = "0";
+            blockquote.style.paddingLeft = "0.5em";
+            blockquote.innerHTML = text
+            return blockquote
+        }
+
+        const initializeSettingsMenu = () => {
+            const settingsContainer = document.querySelector("div[class*='game-menu_settingsContainer']");
+            if (!settingsContainer || settingsContainer.hasAttribute(SETTINGS_INITIALIZED_ATTR)) return;
+
+            settingsContainer.appendChild(createDivider());
+            settingsContainer.appendChild(createTitle("Retry Hotkey Settings"));
+
+            const switchHotkeySetting = createOptionContainer("Hotkey");
+            const updateHotkeyButton = createButton("Set new hotkey (Current Hotkey: " + RESET_KEY.toUpperCase() + ")", () => {
+                updateHotkeyButton.innerHTML = "Press a new key to set as the hotkey";
+                updateHotkeyButton.style.color = "#ccc";
+                updateHotkeyButton.disabled = true;
+
+                const handleNewKey = (event) => {
+                    RESET_KEY = event.key;
+                    localStorage.setItem(RESET_KEY_STORAGE, RESET_KEY);
+                    log(`New hotkey set: ${RESET_KEY}`);
+                    alert(`New hotkey set to: ${RESET_KEY.toUpperCase()}`);
+
+                    updateHotkeyButton.disabled = false;
+                    updateHotkeyButton.style.color = "#fff";
+                    updateHotkeyButton.innerHTML = "Set new hotkey (Current Hotkey: " + RESET_KEY.toUpperCase() + ")";
+                    document.removeEventListener("keydown", handleNewKey);
+                };
+
+                document.addEventListener("keydown", handleNewKey);
+            });
+
+            switchHotkeySetting.appendChild(updateHotkeyButton);
+
+            const changeDelaySetting = createOptionContainer("Delay");
+            const changeDelayInfoText = createBlockquote("When dealing with bad internet connection or bugs that the match won't automatically start, it can be helpful to increase the delay")
+            const changeDelayButton = createButton("Change Delay (Current Delay: " + DELAY + "ms)", () => {
+                const newDelay = prompt("Enter new delay in ms")
+
+                if (isNaN(newDelay)) {
+                    alert("Input is not a number")
+                    return
+                }
+
+                DELAY = Number(newDelay)
+                localStorage.setItem(DELAY_STORAGE, DELAY);
+                log(`New delay set: ${DELAY}`);
+                alert(`New delay set to: ${DELAY}`);
+                changeDelayButton.innerHTML = "Change Delay (Current Delay: " + DELAY + "ms)"
+            });
+
+            changeDelaySetting.appendChild(changeDelayInfoText);
+            changeDelaySetting.appendChild(changeDelayButton);
+
+            settingsContainer.appendChild(switchHotkeySetting);
+            settingsContainer.appendChild(changeDelaySetting);
+            settingsContainer.setAttribute(SETTINGS_INITIALIZED_ATTR, true);
+        };
+
+        initializeSettingsMenu();
+    };
+
+    const observeSettingsView = () => {
+        const observer = new MutationObserver(() => {
+            const settingsView = document.querySelector("div[class*='game-menu_inGameMenuOverlay']");
+            if (settingsView) {
+                log("Settings view loaded.");
+                addConfigurationsToMenuOverlay()
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    };
+
     // Initialize script
     const initialize = () => {
         document.addEventListener("keydown", handleKeyDown); // Add keydown listener
         attemptPlay(); // Check if play needs to be triggered
         saveCurrentMap(); // Save the map URL if relevant
-        observeUrlChanges(); // Start observing URL changes
+        observeUrlChanges(); // Start observing DOM and URL changes
+        observeSettingsView(); // Start observing the menu overlay view to add own settings
     };
 
     // Run the script
